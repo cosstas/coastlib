@@ -269,7 +269,7 @@ def rose_plot(
             f'[{value_bin_boundaries[i]:.2f} : {value_bin_boundaries[i + 1]:.2f})'
             for i in range(0, len(value_bin_boundaries) - 2)
         ]
-        bar_labels.append(f'[{value_name} : inf)')
+        bar_labels.append(f'[{value_bin_boundaries[-2]:.2f} : inf)')
 
         # Draw calm region and add to legend
         ax.set_rorigin(-calm_size)
