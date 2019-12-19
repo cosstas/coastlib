@@ -266,7 +266,7 @@ def rose_plot(
         if value_name is None:
             value_name = 'Value'
         bar_labels = [
-            f'{[value_bin_boundaries[i]:.2f} : {value_bin_boundaries[i + 1]:.2f})'
+            f'[{value_bin_boundaries[i]:.2f} : {value_bin_boundaries[i + 1]:.2f})'
             for i in range(0, len(value_bin_boundaries) - 2)
         ]
         bar_labels.append(f'[{value_name} : inf)')
