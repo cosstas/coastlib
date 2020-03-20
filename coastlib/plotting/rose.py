@@ -114,7 +114,7 @@ def get_rose_parameters(
     mask = values >= calm_value
     
     if exclude_calm:
-        # Get calm region taken into account
+        # All values are taken into account
         fixed_values = values
     else:
         # Get only values that are outside the calm region (calm region not taken into account)
