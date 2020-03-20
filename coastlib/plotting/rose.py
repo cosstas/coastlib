@@ -22,7 +22,7 @@ from .styles import coastlib_rc
 
 def get_rose_parameters(
         values, directions, value_bin_boundaries, n_dir_bins, cmap=plt.get_cmap('viridis'),
-        center_on_north=True, calm_size=1, calm_value=None
+        center_on_north=True, calm_size=1, calm_value=None, exclude_calm=False
 ):
     """
     Calculates rose plot parameters.
@@ -45,6 +45,11 @@ def get_rose_parameters(
         Value defining calm region. All values smaller than this value are placed into the calm region (default=None).
         Must not be larger than smallest value in value_bin_boundaries.
         If None, takes the smallest value from value_bin_boundaries.
+    exclude_calm : boolean, optional
+        If True rose percentages are exclusive of calm period. Rose percentages and
+        calm period sum up to 100%.
+        If False, rose percentages include calm period. Rose percentages alone sum up to 100%.
+        
 
     Returns
     -------
@@ -105,16 +110,21 @@ def get_rose_parameters(
         fixed_directions = (directions + delta_angle) % 360
     else:
         fixed_directions = directions
-
-    # Get only values that are outside the calm region
+    
     mask = values >= calm_value
-    fixed_values = values[mask]
-    fixed_directions = fixed_directions[mask]
-
+    
+    if exclude_calm:
+        # Get calm region taken into account
+        fixed_values = values
+    else:
+        # Get only values that are outside the calm region (calm region not taken into account)
+        fixed_values = values[mask]
+        fixed_directions = fixed_directions[mask]
+    
     # Get counts for each bin
     binned, _, _ = np.histogram2d(fixed_values, fixed_directions, [value_bin_boundaries, direction_bin_boundaries])
 
-    # Get coordinates of bar (bar on a rose plot) bottoms as counts (calm region not taken into account)
+    # Get coordinates of bar (bar on a rose plot) bottoms as counts
     bottom_counts = np.transpose(
         [
             np.append(
@@ -124,11 +134,13 @@ def get_rose_parameters(
     )
 
     # Make sure all values are counted and convert counts to percentages
-    assert calm_count + np.sum(binned) == len(values), 'Number of binned values is not equal to total number of values'
-    assert np.isclose(
-        bottom_counts[-1].sum() + binned[-1].sum(),
-        len(fixed_values)
-    ), 'Number of binned values in bar bottoms is not equal to total number of adjusted values'
+    if not exclude_calm:
+        assert calm_count + np.sum(binned) == len(values), 'Number of binned values is not equal to total number of values'
+        assert np.isclose(
+            bottom_counts[-1].sum() + binned[-1].sum(),
+            len(fixed_values)
+        ), 'Number of binned values in bar bottoms is not equal to total number of adjusted values'
+    
     calm_percentage = calm_count / len(values) * 100
     radii = binned / len(fixed_values) * 100
     bottoms = bottom_counts / len(fixed_values) * 100
@@ -142,7 +154,7 @@ def get_rose_parameters(
 def rose_plot(
         values, directions, value_bin_boundaries, n_dir_bins=12, cmap=plt.get_cmap('viridis'), rose_type='bar',
         fig=None, ax=None, center_on_north=True, calm_size=None, calm_value=None, title='Rose Plot', value_name=None,
-        rwidths=None, geomspace=False, **kwargs
+        rwidths=None, geomspace=False, exclude_calm=False, **kwargs
 ):
     """
     Generates a rose plot for given values and directions.
@@ -184,6 +196,10 @@ def rose_plot(
         If scalar value is passed (float), draws a regular rose plot with constant widths.
     geomspace : bool, optional
         If True, scales rwidths in geometric progression (default=False).
+    exclude_calm : boolean, optional
+        If True rose percentages are exclusive of calm period. Rose percentages and
+        calm period sum up to 100%.
+        If False, rose percentages include calm period. Rose percentages alone sum up to 100%.
     bar_props : dict, optional
         Dictionary with keyword arguments passed to ax.bar object.
         Default=dict(edgecolor='k', linewidth=.3, zorder=-15)
@@ -248,7 +264,7 @@ def rose_plot(
         theta, radii, bottoms, colors, p_calms, value_bin_boundaries = get_rose_parameters(
             values=values, directions=directions,
             value_bin_boundaries=value_bin_boundaries, n_dir_bins=n_dir_bins, cmap=cmap,
-            center_on_north=center_on_north, calm_value=calm_value
+            center_on_north=center_on_north, calm_value=calm_value, exclude_calm=exclude_calm,
         )
 
         if calm_size is None:
